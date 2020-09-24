@@ -7,6 +7,15 @@ prometheus exporter for [ferraris meter / eletricity counter](https://en.wikiped
 > Specifically it uses the [gpiod librariy](https://github.com/warthog618/gpiod) to read the GPIO Pins
 
 # What is measured?
+The `ferraris_meter_rpms` metric indicates the total number of rotations.
+
+Due to floating point arithemic inaccuracies the total power usage in kWh is not reported,
+rather divide the rpms by 75 (depending on your ferraris meter, see the Hardware section for details) in prometheus:
+```
+ferraris_meter_rpms/75
+```
+This reduces the inaccuracy to 1 floating point division overall instead of 1 floating point division each rotation
+which would get more inaccurate over time the more rotations are counted.
 
 # Run
 > ferraris_meter_exporter assumes that the IR Sensor is wired to GPIO2 on the Raspberry Pi and that
