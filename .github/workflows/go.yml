@@ -1,0 +1,57 @@
+name: Go
+
+on:
+  push:
+    tags:
+      - '*.*.*'
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        platforms: [linux/arm, linux/arm64]
+    steps:
+      - name: Set up Go 1.x
+        uses: actions/setup-go@v2
+        with:
+          go-version: ^1.15
+        id: go
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v2
+      - uses: jungwinter/split@v1
+        id: split
+        with:
+          seperator: /
+          msg: ${{ matrix.platforms }}
+      - name: Build
+        run: GOOS=${{ steps.split.outputs._0 }} GOARCH=${{ steps.split.outputs._1 }}  go build -o ferraris_meter_exporter-${{ steps.split.outputs._0 }}-${{ steps.split.outputs._1 }}
+      - uses: actions/upload-artifact@v2
+        with:
+          name: ferraris_meter_exporter
+          path: ferraris_meter_exporter*
+  release:
+    needs: build
+    name: Release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v2
+        with:
+          name: ferraris_meter_exporter
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          body: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
+      - uses: shogo82148/actions-upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ferraris_meter_exporter*
+
